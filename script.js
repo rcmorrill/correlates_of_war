@@ -360,24 +360,24 @@ function dataLoaded(err,data){
 
             $("body").animate(
                 {scrollTop:yP},
-                300
-                // function(){
+                300,
+                function(){
 
-                //     // a jQuery bug may cause the complete function fired a little early before the animation done
-                //     // add a 100ms timer to prevent the bug occur
-                //     setTimeout(function(){
-                //         $(window).one("scroll.setScene",function(){
+                    // a jQuery bug may cause the complete function fired a little early before the animation done
+                    // add a 100ms timer to prevent the bug occur
+                    setTimeout(function(){
+                        $(window).one("scroll.setScene",function(){
 
-                //             console.log("SCENE -TRUE");
-                //             testScene.forEach(function(d1){
+                            console.log("SCENE -TRUE");
+                            testScene.forEach(function(d1){
 
-                //                 d1.scene.enabled(true)
-                //             });
+                                d1.scene.enabled(true)
+                            });
 
-                //         });
-                //     },100)
+                        });
+                    },2000)
 
-                // }
+                }
             )
             // dispatch
             setTimeout(function(){
