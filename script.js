@@ -375,7 +375,7 @@ function dataLoaded(err,data){
                             });
 
                         });
-                    },2000)
+                    },1000)
 
                 }
             )
