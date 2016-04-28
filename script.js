@@ -348,6 +348,8 @@ function dataLoaded(err,data){
 
             // click sroll
             var yP = document.getElementById("plot").offsetTop + parseFloat(d3.select("#plot").style("padding-top"))+parseFloat(d3.select("#W"+d.warNum).attr("y"));
+           
+
             //window.scrollTo(0,yP);
             testScene.forEach(function(d1){
 
@@ -358,7 +360,7 @@ function dataLoaded(err,data){
 
             $("body").animate(
                 {scrollTop:yP},
-                500,
+                300,
                 function(){
 
                     // a jQuery bug may cause the complete function fired a little early before the animation done
@@ -378,7 +380,8 @@ function dataLoaded(err,data){
                 }
             );
             // dispatch
-            dispatch.customHover(warName,yP);
+            setTimeout(function(){
+                dispatch.customHover(warName);}, 400)
 
             //scroll after dispatch
 
