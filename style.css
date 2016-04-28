@@ -22,7 +22,7 @@ a:focus{
 }
 
 .finish{
-	top:25%;
+	top:20%;
 	right:70%;
 	width:240px;
 	position:fixed;
@@ -54,7 +54,7 @@ a:focus{
 	background-color:none;
 	height: 1000px;
 	width:100%;
-	margin-top:2%;
+	padding-top:2%;
 	margin-bottom:3000px;
 
 }
