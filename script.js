@@ -1,5 +1,5 @@
 
-//FINAL PROJECT
+//FINAL PROJECT -- Ryan Morrill + Xinhe Yu
 
 var margin = {t:5,r:5,b:5,l:5};
 var width = document.getElementById('plot').clientWidth-margin.l-margin.r,
@@ -12,13 +12,18 @@ var force = d3.layout.force()
     .charge(0)
     .gravity(0);
 
+//setting up primary dispatch function
 
+var dispatch = d3.dispatch('customHover','customLeave');
+
+// reload on screen resize
 window.onresize = function(
     ){ location.reload(); }
 
 
 
-//A controller that globally manages scroll interaction
+// ------------scroll magic setup and start / end scenes-------------
+
 var controller = new ScrollMagic.Controller({
     globalSceneOptions:{
         //offset:275
@@ -26,8 +31,6 @@ var controller = new ScrollMagic.Controller({
 });
 
 
-//Then you create a scene
-//Then you register the scene with the controller
 var scene1 = new ScrollMagic.Scene({
         //specifies options for the scene
         triggerElement:".headerArea",
@@ -44,8 +47,6 @@ var scene1 = new ScrollMagic.Scene({
         .style('opacity',.9-(e.progress*1.5))
 
     })
-
-
 
     .addTo(controller);
 
@@ -83,7 +84,7 @@ var testScene = [];
 
 
 
-// Number with comma
+// Adds commas to numbers
 function addComma(num){
     var commaCount = 0;
     var string = num.toString();
@@ -120,7 +121,8 @@ function addComma(num){
 
 
 
-// Tooltips
+// creating tooltips from module
+
 var tooltipLeft = d3.customTooltip()
     .classTag("tooltipLeft")
     .paragraph(4);
@@ -139,6 +141,24 @@ var tooltipBar = d3.customTooltip()
 d3.select('.customTooltips').call(tooltipBar);
 
 
+        // variable to translate outcome numbers in data -- for the tooltips
+
+    var outcomeGroup = {
+        1: "Won",
+        2: "Lost",
+        3: "Compromise/Tied",
+        4: "The war was transformed into another type of war",
+        5: "The war was transformed into another type of war",
+        6: "Stalemate",
+        7: "Conflict continues at below war level",
+        8: "Changed sides"
+    }
+
+
+
+// creating primary plotting svg groups
+
+
 var plot = d3.select('.canvas')
     .append('svg')
     .attr('width',width+margin.l+margin.r)
@@ -147,16 +167,13 @@ var plot = d3.select('.canvas')
     .attr('class','plot')
     .attr('transform', 'translate (0,200)');
 
-//Dashboard
-
 var dashboard = d3.select('.mainDash')
     .append('svg')
     .attr('width',Dwidth+margin.r+margin.r)
     .attr('height',Dheight+margin.t+margin.b)
     .append('g')
     .attr('class','dashboard')
-    .attr('transform', 'translate ('+margin.r+','+margin.r+')');  // TODO: Change the dashboard position
-
+    .attr('transform', 'translate ('+margin.r+','+margin.r+')');  
 
 var casualtiesChart = dashboard.append('g')
     .attr('class','casualtiesChart')
@@ -164,14 +181,11 @@ var casualtiesChart = dashboard.append('g')
 var chartHeight = Dheight*.89;
 var chartWidth = Dwidth/2;
 
-//dispatch
-
-
-var dispatch = d3.dispatch('customHover','customLeave');
 
 
 
-d3.csv('data/war_data.csv',parse,dataLoaded);
+///-----------SCALES AND AXIS ------------------
+
 
 
 var yScaleCasualty = d3.scale.linear().domain([0,1000000]).range([1,chartHeight])
@@ -179,16 +193,10 @@ var colorScale = d3.scale.ordinal().domain([1,2,3,4,5,6,7,8,9,10])
     .range(["black","rgba(157,157,157,1)","rgba(134,134,134,1)","rgba(134,134,134,1)","rgba(134,134,134,1)","rgba(134,134,134,1)","rgba(134,134,134,1)","rgba(134,134,134,1)","rgba(134,134,134,1)","rgba(134,134,134,1)"]);
  var colorScaleFill = d3.scale.ordinal().domain([1,2,3,4,5,6,7,8,9,10])
     .range(["rgba(254,254,254,1)","rgba(245,245,245,1)","rgb(253,253,253)","rgb(253,253,253)","rgb(253,253,253)","rgb(253,253,253)","rgb(253,253,253)","rgb(253,253,253)","rgb(253,253,253)","rgb(253,253,253)"]);
-//var colorScaleFill = d3.scale.ordinal().domain([1,2,3,4,5,6,7,8,9,10])
-    //.range(["rgba(79,185,232,.5)","rgba(31,129,171,.5)","rgb(222,222,222)","rgb(222,222,222)","rgb(222,222,222)","rgb(222,222,222)","rgb(222,222,222)","rgb(222,222,222)","rgb(222,222,222)","rgb(222,222,222)"]);
-var scaleY = d3.scale.linear().domain([1800,2010]).range([0,1400])
 var scaleYLines = d3.time.scale().domain([new Date(1823,0,1),new Date(2005,0,1)]).range([0,8000])
-var scaleC = d3.scale.ordinal().domain([])
 var scaleX = d3.scale.linear().domain([0,700]).range([0,chartWidth])
 var scaleXright = d3.scale.linear().domain([1,124]).range([0,width*.75])
 var scaleR = d3.scale.sqrt().domain([0,4500000]).range([0,300]);
-
-var scalerightTEST = d3.scale.ordinal().domain([])
 
 
 var axisY = d3.svg.axis()
@@ -200,13 +208,26 @@ var axisY = d3.svg.axis()
      .attr('transform', 'translate ('+width*.8+',0)')
   .call(axisY);
 
+
+
+///----------- Loading data and dataLoaded function ------------------
+
+
+d3.csv('data/war_data.csv',parse,dataLoaded);
+
+
+//--- wars variable for crossfilter
+
  var wars;
 
 function dataLoaded(err,data){
 
+    //--- create crossfilter, which allows filtering of data based on war name (data.war)
+
     wars = crossfilter(data);
 
     var casualtiesByWar = wars.dimension(function(data){return data.war;});
+
 
     // data mine-------------------------------------------------
 
@@ -214,7 +235,7 @@ function dataLoaded(err,data){
     var nestedByWarNum = d3.nest()
         .key(function(d){return d.warNum;})
         .entries(data);
-    //console.log(nestedByWarNum);
+
     //----------------------------------------------------------************ Data for scroll***********
     var warNumArray = [];
 
@@ -265,38 +286,13 @@ function dataLoaded(err,data){
 
 
     });
-    //console.log(warNumArray);
-    //warNumArray = warNumArray;
+
     
 
     warNumArray.sort(function(a,b){
         return b.casualties - a.casualties;
     });
 
-    var outcomeGroup = {
-        1: "Won",
-        2: "Lost",
-        3: "Compromise/Tied",
-        4: "The war was transformed into another type of war",
-        5: "The war was transformed into another type of war",
-        6: "Stalemate",
-        7: "Conflict continues at below war level",
-        8: "Changed sides"
-    }
-
-
-
-    //----------------------------------------------------------------
-
-
-
-
-
-//console.log(data);
-//---------------------------------------------------------------------
-
-
-//---building circle force layout thing--------------
 
 
 
@@ -304,10 +300,7 @@ function dataLoaded(err,data){
 
 
 
-
-
-
-//////---------------LEFT CASUALTIES CHART-------------///////////////////
+//////----------------------------------------------------------------------------------LEFT CASUALTIES CHART-------------/////
 
 
     var barWidth = 3;
@@ -333,13 +326,11 @@ function dataLoaded(err,data){
                 yP=0;
             }
 
-
                 tooltipBar.position(xP,yP,"none");
 
                 tooltipBar.update("show",[
                 "<strong>" + d.WarName + "</strong>",
                 ]);
-
 
         })
 
@@ -349,8 +340,6 @@ function dataLoaded(err,data){
             // click sroll
             var yP = document.getElementById("plot").offsetTop + parseFloat(d3.select("#plot").style("padding-top"))+parseFloat(d3.select("#W"+d.warNum).attr("y"));
            
-
-            //window.scrollTo(0,yP);
             testScene.forEach(function(d1){
 
                 d1.scene.enabled(false)
@@ -363,8 +352,8 @@ function dataLoaded(err,data){
                 300,
                 function(){
 
-                    // a jQuery bug may cause the complete function fired a little early before the animation done
-                    // add a 100ms timer to prevent the bug occur
+        // trying to solve weird timing issue -- it's grabbing the wrong war because of scrolling dispatch
+
                     setTimeout(function(){
                         $(window).one("scroll.setScene",function(){
 
@@ -379,13 +368,11 @@ function dataLoaded(err,data){
 
                 }
             )
+
+
             // dispatch
             setTimeout(function(){
                 dispatch.customHover(warName);}, 400)
-
-            //scroll after dispatch
-
-
 
 
         })
@@ -396,13 +383,9 @@ function dataLoaded(err,data){
         })
 
 
-    
-        // .on('click', function(d){
-        //     d3.selectAll('.lines').style('fill',null);
-        //     d3.selectAll('.dash').remove();
-        // })
 
-//////---------------SCROLL TIMELINE CHART-------------///////////////////
+
+//////-------------------------------------------------------------------------------------SCROLL TIMELINE CHART-------------//////
 
 
 
@@ -412,13 +395,11 @@ function dataLoaded(err,data){
         .append('rect').attr('class',function(d){return "lines W"+d.warNum;})
         .attr('x',function(d){return scaleXright(d.ccode)})
         .attr('y', function(d){return scaleYLines(d.startDate)})
-        //.attr('r',10)
         .attr('height',function(d){
             var length = scaleYLines(d.endDate) - scaleYLines(d.startDate);
             return length;
         })
         .attr('width', 7)
-        //.attr('fill',function(d){return scaleC(d.location)})
         .attr('fill','rgba(12,12,12,.1)')
 
         .on('click',function(d){
@@ -438,7 +419,6 @@ function dataLoaded(err,data){
                 "<strong>" + d.country + "</strong>",
                 ""+d.war+"",
                 "casualties: <strong>"+addComma(d.casualties)+"</strong>",
-                //"outcome: <strong class='backTT' style='background-color:"+ colorScaleFill(d.outcome)+"''>"+outcomeGroup[d.outcome]+"</strong>"  
                 "outcome: <strong class='backTT'>"+outcomeGroup[d.outcome]+"</strong>"  
 
             ]);
@@ -451,17 +431,15 @@ function dataLoaded(err,data){
             tooltipRight.update("hide");
         })
     
-        // .on('click', function(d){
-        //     d3.selectAll('.lines').style('fill',null);
-        //     d3.selectAll('.dash').remove();
-        // })
+
         .each(testScroll);
 
-   // console.log(testScene);
+
+
+    // creates a scroll scene for each war
 
 
       function testScroll(data){
-        // console.log(data.warNum);
         var lineTarget = d3.select(this);
         var arrayTarget;
         warNumArray.forEach(function(d,i){
@@ -499,23 +477,23 @@ function dataLoaded(err,data){
 
             warNumArray[arrayTarget].hasScrollScene=true;
 
-        }
+            }// END conditional
+
+        }// END testScroll
 
 
-
-
-    }
-
-
-
+//--------------------------------------------------------------------DISPATCH LISTENER------------------------////
     
 
     dispatch.on('customHover', function(warName){
 
 
-        d3.selectAll('.lines').style('fill',null);
+// ------remove dashboard casualties green box and tooltip
+
         d3.selectAll('.dash').remove();
         tooltipLeft.update("hide");
+
+// ------update lines on left and right
     
         d3.selectAll('.lines').style('fill',function(d){
         if( warName == d.war )
@@ -525,39 +503,36 @@ function dataLoaded(err,data){
         else return null;
             });
 
-    
-        //casualtiesByWar.filter(null);
+        // remove circle and circle text
+
         dashboard.selectAll('.nodes').remove();
-    
-    
+
+        /// creating filtered data based on disptach event
+
         casualtiesByWar.filter(warName);
-    
-    
         var dataDispatch = casualtiesByWar.top(Infinity);
 
 
-
+        /// appending new circles and text
     
         var nodes = dashboard.selectAll('.nodes')
             .data(dataDispatch)
             .enter()
             .insert('g','.casualtiesChart').attr('class','nodes')
 
-    
+
+//--CIRCLES
+
+
         var circles = nodes
             .insert('circle')
             .attr('cy', Dheight/2)
             .attr('cx', 200)
             .attr('r', function(d){ return d.r})
             .attr('stroke-dasharray',function(d){ if (d.outcome>=3){return '2,2'}})
-            //.attr('fill','rgb(185,213,50)')
-            //.attr('stroke','black')
             .attr('stroke',function(d){return colorScale(d.outcome)})
             .style("stroke-width", 2) 
             .attr('fill',function(d){return colorScaleFill(d.outcome)})
-            //.attr('fill',function(d){return colorScaleFill(d.outcome)})
-
-
 
 
             .on("mouseenter",function(d){
@@ -571,7 +546,6 @@ function dataLoaded(err,data){
                 "<strong>" + d.country + "</strong>",
                 ""+d.war+"",
                 "casualties: <strong>"+addComma(d.casualties)+"</strong>",
-                //"outcome: <strong class='backTT' style='background-color:"+ colorScaleFill(d.outcome)+"''>"+outcomeGroup[d.outcome]+"</strong>"  
                 "outcome: <strong class='backTT'>"+outcomeGroup[d.outcome]+"</strong>"  
                 ]);
                 
@@ -582,10 +556,12 @@ function dataLoaded(err,data){
                 tooltipLeft.update("hide");
             });
 
+
+//--TEXT LABELS
+
+
         var text = nodes
             .append('text').attr('class','countryLabel')
-            // .attr('y', function(d){return d.y})
-            // .attr('x', function(d){return d.x})
             .attr('cy', Dheight/2)
             .attr('cx', 200)
             .attr('fill','black')
@@ -605,7 +581,6 @@ function dataLoaded(err,data){
                 "<strong>" + d.country + "</strong>",
                 ""+d.war+"",
                 "casualties: <strong>"+addComma(d.casualties)+"</strong>",
-                //"outcome: <strong class='backTT' style='background-color:"+ colorScaleFill(d.outcome)+"''>"+outcomeGroup[d.outcome]+"</strong>"  
                 "outcome: <strong class='backTT'>"+outcomeGroup[d.outcome]+"</strong>"  
                 ]);
                 
@@ -617,17 +592,17 @@ function dataLoaded(err,data){
              .on("scroll",function(){
                 tooltipLeft.update("hide");
             });
+
+
+// force stuff       
+
     
         force.nodes(data)
             .on('tick',onForceTick)
             .start();
-
-
-
-    //d3.selectAll('label')
     
     
-        function onForceTick(e){
+function onForceTick(e){
             var q = d3.geom.quadtree(dataDispatch),
                 i = 0,
                 n = dataDispatch.length;
@@ -662,7 +637,7 @@ function dataLoaded(err,data){
                .attr('y',function(d){return d.y})
                .attr('x',function(d){return d.x})
     
-            function collide(dataPoint){
+        function collide(dataPoint){
                 var nr = dataPoint.r + 5,
                 nx1 = dataPoint.x - nr,
                 ny1 = dataPoint.y - nr,
@@ -685,23 +660,19 @@ function dataLoaded(err,data){
                     }
                     return x1>nx2 || x2<nx1 || y1>ny2 || y2<ny1;
                 }
-            }
+            }// END collide
             
-        }//END onForceTick Function
+}//END onForceTick Function
 
 
-
+//--- dashboard casualties (green tag thing)
 
 d3.select('.buttonWarName').select('strong').html(warName)
 
 
-
-            
-
-
         casualtiesChart.append('text')
             .attr('class','dash casLabels')
-            .text('TOTAL CASUALTIES ACROSS WARS')
+            .text('TOTAL CASUALTIES FOR EACH WAR')
             .attr('x',2)
             .attr('y',chartHeight+50)
 
@@ -743,32 +714,8 @@ d3.select('.buttonWarName').select('strong').html(warName)
 }
 
 
-function parse(d){
 
-    return{
-
-        // x: Dwidth/2,
-        // y: Dheight/2,
-        country: d.StateName,
-        ccode: +d.newccode,
-        initiator: d.Initiator,
-        length: d.Length,
-        war: d.WarName,
-        warNum: d.WarNum,
-        start: +d.StartYear1,
-        casualties: +d.BatDeath,
-        r: scaleR(+d.BatDeath),
-        outcome: +d.Outcome,
-        location: d.WhereFought,
-        startDate: new Date(+d.StartYear1, + d.StartMonth1-1, + d.StartDay1),
-        endDate: new Date(+d.EndYear1, + d.EndMonth1-1, + d.EndDay1),
-    }
-}
-
-
-
-
-/*----------------region title stuff-------------*/
+/*---------------------------------------------------------region background stuff-------------*/
 
 var regionW = document.getElementById('regionTitle').clientWidth
 var regionH = document.getElementById('regionTitle').clientHeight
@@ -791,7 +738,7 @@ plotRegion.append('rect')
         .attr('class','regionRect')
 
 plotRegion.append('text')
-        .attr('x',scaleXright(2.5))
+        .attr('x',scaleXright(3))
         .attr('y',regionH*.02)
         .text('NA').attr('class','regionLabels')
 
@@ -804,7 +751,7 @@ plotRegion.append('rect')
 
 
 plotRegion.append('text')
-        .attr('x',scaleXright(13))
+        .attr('x',scaleXright(14))
         .attr('y',regionH*.02)
         .text('SA').attr('class','regionLabels')
 
@@ -816,7 +763,7 @@ plotRegion.append('rect')
         .attr('class','regionRectLine')
 
 plotRegion.append('text')
-        .attr('x',scaleXright(39))
+        .attr('x',scaleXright(41))
         .attr('y',regionH*.02)
         .text('EU').attr('class','regionLabels')
 
@@ -828,7 +775,7 @@ plotRegion.append('rect')
         .attr('class','regionRectLine')
 
 plotRegion.append('text')
-        .attr('x',scaleXright(70))
+        .attr('x',scaleXright(71))
         .attr('y',regionH*.02)
         .text('AF').attr('class','regionLabels')
 
@@ -852,14 +799,14 @@ plotRegion.append('rect')
         .attr('class','regionRectLine')
 
 plotRegion.append('text')
-        .attr('x',scaleXright(109))
+        .attr('x',scaleXright(111))
         .attr('y',regionH*.02)
         .text('AS').attr('class','regionLabels')
 
 
 
 
-
+//--- freeze region div at top of screen
 
 
   var $window = $(window),
@@ -936,15 +883,44 @@ dashboard.append('text')
     .attr('class','keyLabels')
 
 
-/*-------instructions-----------*/
+/*---------------------------------------------instructions-----------*/
 
 
 
 
 
 var instructions = d3.select('.instructions').select('p')
-.html("Each line represents the duration a country and/or state was involved in a war. Scrolling over (like a music box) will highlight all states associated with that war and profile the war to the left.");
+.html("Each line represents the duration a country and/or state was involved in a war. Scrolling over each one (like a music box) will highlight all the states associated with that war and profile the war to the left.");
  
 
-                d3.select('.instructions').style('left', '42%')
-                    .style('top', '17%');   
+d3.select('.instructions').style('left', '42%')
+    .style('top', '17%');   
+
+
+
+
+
+/*---------------------------------------------Parse-----------*/
+
+function parse(d){
+
+    return{
+
+        // x: Dwidth/2,
+        // y: Dheight/2,
+        country: d.StateName,
+        ccode: +d.newccode,
+        initiator: d.Initiator,
+        length: d.Length,
+        war: d.WarName,
+        warNum: d.WarNum,
+        start: +d.StartYear1,
+        casualties: +d.BatDeath,
+        r: scaleR(+d.BatDeath),
+        outcome: +d.Outcome,
+        location: d.WhereFought,
+        startDate: new Date(+d.StartYear1, + d.StartMonth1-1, + d.StartDay1),
+        endDate: new Date(+d.EndYear1, + d.EndMonth1-1, + d.EndDay1),
+    }
+}
+

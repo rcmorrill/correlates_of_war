@@ -7,9 +7,6 @@ d3.customTooltip = function(){
             position: "fixed",
             top: "0px",
             left: "0px",
-            // "-webkit-border-radius": "3px",
-            // "-moz-border-radius": "3px",
-            // "border-radius": "3px",
             "background-color": "rgba(178, 178, 178, 0.85)",
             "pointer-events": "none",
             opacity:0
