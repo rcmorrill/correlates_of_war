@@ -10,6 +10,7 @@ var width = document.getElementById('plot').clientWidth-margin.l-margin.r,
 var force = d3.layout.force()
     .size([Dwidth,Dheight])
     .charge(0)
+    .friction(.75)
     .gravity(0);
 
 //setting up primary dispatch function
@@ -347,9 +348,9 @@ function dataLoaded(err,data){
             console.log("SCENE -FALSE")
 
 
-            $("body").animate(
+            $(document.scrollingElement).animate(
                 {scrollTop:yP},
-                300,
+                500,
                 function(){
 
         // trying to solve weird timing issue -- it's grabbing the wrong war because of scrolling dispatch
@@ -906,8 +907,8 @@ function parse(d){
 
     return{
 
-        // x: Dwidth/2,
-        // y: Dheight/2,
+        x: Dwidth*.25 + Math.random()*25,
+        y: Dheight/2 + Math.random()*25,
         country: d.StateName,
         ccode: +d.newccode,
         initiator: d.Initiator,
